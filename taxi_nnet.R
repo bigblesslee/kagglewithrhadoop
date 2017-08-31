@@ -1,0 +1,5 @@
+install.packages("nnet")
+library(nnet)
+detach()
+attach(taxi_tmp)
+m = nnet(trip_duration ~. ,data = taxi_tmp, size=1)
