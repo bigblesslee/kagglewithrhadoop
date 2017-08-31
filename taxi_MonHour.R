@@ -7,9 +7,9 @@ month = date$mon
 hour = date$hour
 
 mhd = data.frame(taxi_tmp$trip_duration,month,hour)
-
-plot(mhd$hour,mhd$taxi_tmp.trip_duration)
 colnames(mhd) = c("trip_duration","month","hour")
+plot(hour,trip_duration)
+
 library(plyr)
 h_am =ddply(mhd,"hour",summarise,total.count=sum(1))
 plot(h_d)
