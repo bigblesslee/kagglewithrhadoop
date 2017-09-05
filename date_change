@@ -1,0 +1,6 @@
+Sys.setenv(tz = "UTC")
+date_utc = newyork_hour_climate[,14]
+date_utc = as.data.frame(date_utc)
+tmp = date_utc[,1]
+date_utc_cl = as.POSIXct(tmp)
+tmp_date = format(date_utc_cl,format("%m%d%H"), tz="EST")
