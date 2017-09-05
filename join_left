@@ -1,0 +1,4 @@
+Sys.setenv(tz = "UTC")
+date_utc = tmppp2[,14]date_utc = as.data.frame(date_utc)tmp = date_utc[,1]date_utc_cl = as.POSIXct(tmp)tmp_date = format(date_utc_cl,format("%m%d%H"), tz="EST")
+tmp_date = as.character(tmp_date)####tmp_date = as.data.frame(tmp_date)tmppp3 = data.frame(tmppp2, tmp_date)tmppp3$tmp_date<-as.character(tmppp3$tmp_date)str(tmppp3)
+date_taxi = taxi_tmp[,4]date_taxi = as.data.frame(date_taxi)tmp = date_taxi[,1]date_taxi2 = as.POSIXct(tmp)tmp_date = format(date_taxi2,format("%m%d%H"))tmp_date = as.character(tmp_date)tmp_date = as.data.frame(tmp_date)taxi_real = taxi_tmp[,2:13]taxi_real = cbind(taxi_real,tmp_date)taxi_real$tmp_date<-as.character(taxi_real$tmp_date)str(taxi_real)plz = left_join(taxi_real,tmppp3,by="tmp_date")
