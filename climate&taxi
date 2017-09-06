@@ -1,0 +1,17 @@
+Sys.setenv(tz = "UTC") # 내 컴퓨터 기준을 UTC로 변환
+
+#######nyc_climate_1 ~ 6  , 51분 만 추출clmate_com <- rbind(clmate_com, nyc_climate_6)
+cl_datetime = nyc_climate_6[,14]cl_datetime = as.data.frame(cl_datetime)cl_tmp = cl_datetime[,1]cl_date = as.POSIXlt(cl_tmp)
+cl_min = cl_date$mincl_min = as.data.frame(cl_min)climate6 = cbind(nyc_climate_6,cl_min)
+climate6 = climate6[climate6$cl_min==51,]climate6 = select(climate6,-cl_min)
+
+
+
+########51분을 기준으로 뽑아낸 날씨 데이터를 EST로 변환 및 tmp_date 컬럼 추가
+date_utc = climate6[,14] #climate1~6date_utc = as.data.frame(date_utc)tmp = date_utc[,1]date_utc_cl = as.POSIXct(tmp)tmp_date = format(date_utc_cl,format("%m%d%H"), tz="EST")
+tmp_date = as.character(tmp_date)####tmp_date = as.data.frame(tmp_date)climate6 = data.frame(climate6, tmp_date)climate6$tmp_date<-as.character(climate6$tmp_date)str(climate6)
+#################climate_combine
+climate_sh = rbind(climate_sh, climate6)str(climate_sh)
+########### tmp_date 추가date_taxi = taxi_tmp[,4]date_taxi = as.data.frame(date_taxi)tmp = date_taxi[,1]date_taxi2 = as.POSIXct(tmp)tmp_date = format(date_taxi2,format("%m%d%H"))tmp_date = as.character(tmp_date)tmp_date = as.data.frame(tmp_date)taxi_real = taxi_tmp[,2:13]taxi_real = cbind(taxi_real,tmp_date)taxi_real$tmp_date<-as.character(taxi_real$tmp_date)str(taxi_real)가
+
+###########tmp_date 를 기준으로 taxi data와 climate data를 합ㅊtaxi_real = left_join(taxi_real,climate_sh,by="tmp_date")
