@@ -15,3 +15,11 @@ map <- ggmap(newyork_map) + geom_point(data = pick_location_out4,
                                        aes(x=p_longtitude, y=p_latitude, color = "blue"),
                                        size = 3)
 map
+
+
+##pick_location = select(train_clean2,id,pickup_latitude,pickup_longtitude)
+##initial_map = get_map("US", zoom=9, maptype = "roadmap")
+##map = ggmap(newyork_map) + geom_point(data = pick_location,
+##                                       aes(x=pickup_longtitude, y=pickup_latitude, color = "red"),
+##                                     size = 1)
+##map
