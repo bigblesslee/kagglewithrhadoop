@@ -1,0 +1,35 @@
+library(data.table)library(geosphere)library(dplyr)library(lubridate)library(xgboost)
+
+rm(list=ls())gc()
+first_day_of_month_wday <- function(dx) {  day(dx) <- 1  wday(dx)}
+# Load Data 
+path <- "../input"
+train <- fread(file.path("C:/hadoop/train.csv"))test  <- fread(file.path("C:/hadoop/test.csv"))
+train <- train %>% select(-dropoff_datetime)
+test$trip_duration <- -1
+# Bind Train&Test for preprocessingmy_data <- rbind(train,test)
+# Calculate distances between points (package geosphere)my_data[, distance_trip := distHaversine(matrix(c(pickup_longitude, pickup_latitude), ncol = 2),                                         matrix(c(dropoff_longitude, dropoff_latitude), ncol = 2))]
+# Preprocessingattach(my_data)
+# n : total rows used to create empty dataframen <- nrow(my_data)
+# Date stuffpickup_datetime   <- as.POSIXct(pickup_datetime, "%Y-%m-%d %H:%M:%S")
+pickup            <- data.frame(matrix(NA, nrow=n, ncol=0))
+pickup$month      <- month(pickup_datetime)pickup$week       <- week(pickup_datetime)pickup$week_month <- ceiling((day(pickup_datetime) + first_day_of_month_wday(pickup_datetime) - 1) / 7)pickup$day        <- day(pickup_datetime)pickup$yday       <- yday(pickup_datetime)pickup$wday       <- wday(pickup_datetime)pickup$hour       <- hour(pickup_datetime)pickup$minute     <- minute(pickup_datetime)
+# gps stuffgps               <- data.frame(matrix(NA, nrow=n, ncol=0))
+gps$pickup_lon    <- pickup_longitudegps$pickup_lat    <- pickup_latitudegps$dropoff_lon   <- dropoff_longitudegps$dropoff_lat   <- dropoff_latitude
+# distance stuffdist                  <- data.frame(matrix(NA, nrow=n, ncol=0))
+dist$distance_trip    <- log(distance_trip)
+passenger_count       <- passenger_count
+# categorical as factorcats <- select(my_data,c("vendor_id","store_and_fwd_flag"))for (f in colnames(cats)) {  #cat("VARIABLE : ",f,"\n")  levels <- unique(cats[[f]])  cats[[f]] <- as.numeric(factor(cats[[f]], levels=levels))}
+trip_duration <- log(trip_duration)
+detach(my_data)
+# group all preprocessed partsmy_data <- as.data.frame(cbind(pickup, gps, dist, passenger_count, cats, trip_duration))
+my_data[is.na(my_data)] <- -1
+n_row   <- nrow(train)n_col   <- ncol(my_data)max_row <- nrow(my_data)
+#my_train <- my_data[1:n_row,]mcor <- cor(my_train)#
+x_train <- my_data[1:n_row,1:n_col-1]y_train <- my_data[1:n_row,n_col]x_test  <- my_data[(n_row+1):max_row,1:n_col-1]
+#rm(my_data,pickup, gps, passenger_count, cats)
+dtrain = xgb.DMatrix(as.matrix(x_train), label=y_train)dtest  = xgb.DMatrix(as.matrix(x_test))
+start<-proc.time()xgb_params = list(  seed = 45569,  colsample_bytree = 0.7,  subsample = 0.8,  eta = 0.1,  objective = 'reg:linear',  max_depth = 4,  max_delta_step = 2,  min_child_weight = 1)res = xgb.cv(xgb_params,             dtrain,             nrounds=1000,              #--- Will stop before (early_stopping_rounds)             nfold=10,                                early_stopping_rounds=10,             print_every_n=100,             verbose=2,             eval_metric = "rmse",             maximize=FALSE)print("Total runtime:")print(proc.time()-start)print(res)
+best_nrounds = res$best_iterationgbdt = xgb.train(xgb_params, dtrain, best_nrounds)pred = predict(gbdt,dtest)
+importance_matrix <- xgb.importance(names(my_data), model = gbdt)importance_matrix$Gain <- importance_matrix$Gain * 100View(importance_matrix)xgb.ggplot.importance(importance_matrix = importance_matrix)xgb.plot.deepness(model = gbdt)
+submit_data <- as.data.frame(exp(pred))submit_data <- cbind(test$id,submit_data)colnames(submit_data) <- c("id","trip_duration")write.csv(submit_data,"xgb_basic.csv", row.names = FALSE)
